@@ -1,0 +1,45 @@
+name: Extract 7z and Push
+
+on:
+  push:
+    paths:
+      - 'bus temp.7z'
+  workflow_dispatch:
+
+jobs:
+  extract-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout with write access using your PAT
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.Test }}
+          persist-credentials: true
+
+      # Install 7zip
+      - name: Install p7zip
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y p7zip-full
+
+      # Extract the archive into repo root
+      - name: Extract bus temp.7z
+        run: |
+          7z x "bus temp.7z" -o./
+
+      # Commit and push only if there are changes
+      - name: Commit and push extracted files
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add -A > /dev/null 2>&1
+
+          if ! git diff --cached --quiet; then
+            git commit -m "Extract bus temp.7z"
+            git push
+          else
+            echo "No changes to commit"
+          fi
